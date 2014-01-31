@@ -55,20 +55,24 @@ func main() {
 		C.PrlApi_Deinit()
 		fmt.Printf("Login job returned with error: %s\n", C.GoString(C.prl_result_to_string(nJobResult)))
 		return
-	} else {
-		fmt.Printf("login successfully performed\n")
 	}
+	fmt.Printf("login successfully performed\n")
 
 	// Do stuff
-	var hStringList C.PRL_HANDLE
-	C.PrlApi_CreateStringsList(&hStringList)
-	C.PrlStrList_AddItem(hStringList, C.CString("/Users/rickard/go-code/testing/output-parallels-iso/"))
+	//var hStringList C.PRL_HANDLE
+	//C.PrlApi_CreateStringsList(&hStringList)
+	//C.PrlStrList_AddItem(hStringList, C.CString("/Users/rickard/go-code/testing/output-parallels-iso/"))
+	//C.PrlStrList_AddItem(hStringList, C.CString("/Users/rickard/Documents/Parallels/Windows 7.pvm/"))
 	// Begin the search operation.
-	hJob = C.PrlSrv_StartSearchVms(hServer, hStringList)
+	//hJob = C.PrlSrv_StartSearchVms(hServer, hStringList)
+	hJob = C.PrlSrv_GetVmList(hServer)
 	// Wait for the job to complete.
-	ret = C.PrlJob_Wait(hJob, 1000)
+	ret = C.PrlJob_Wait(hJob, 10000)
 	if ret < 0 {
-		// Handle the error...
+		C.PrlHandle_Free(hJob)
+		C.PrlHandle_Free(hServer)
+		C.PrlApi_Deinit()
+		fmt.Printf("Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(ret)))
 		return
 	}
 
@@ -77,48 +81,61 @@ func main() {
 	// Analyze the result of PrlSrv_StartSearchVms.
 	ret = C.PrlJob_GetRetCode(hJob, &nJobReturnCode)
 	if ret < 0 {
-		// Handle the error...
 		C.PrlHandle_Free(hJob)
+		C.PrlHandle_Free(hServer)
+		C.PrlApi_Deinit()
+		fmt.Printf("GetRetCode: Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(ret)))
 		return
 	}
 	// Check the job return code.
 	if nJobReturnCode < 0 {
-		// Handle the error...
 		C.PrlHandle_Free(hJob)
+		C.PrlHandle_Free(hServer)
+		C.PrlApi_Deinit()
+		fmt.Printf("GetRetCode 2: Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(nJobReturnCode)))
 		return
 	}
 	// Get job result.
 	ret = C.PrlJob_GetResult(hJob, &hJobResult)
 	C.PrlHandle_Free(hJob)
 	if ret < 0 {
-		// Handle the error...
+		C.PrlHandle_Free(hJob)
+		C.PrlHandle_Free(hServer)
+		C.PrlApi_Deinit()
+		fmt.Printf("GetResult: Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(ret)))
 		return
 	}
 
 	// Iterate through the returned list obtaining a
 	// handle of type PHT_FOUND_VM_INFO in each iteration containing
 	// the information about an individual virtual machine.
-	//	var nIndex, nCount C.PRL_UINT32
-	//	var hFoundVmInfo C.PRL_HANDLE
+	var nIndex, nCount C.PRL_UINT32
+	var hFoundVmInfo C.PRL_HANDLE
 
-	//	C.PrlResult_GetParamsCount(hJobResult, &nCount)
-	//	for nIndex = 0; nIndex < nCount; nIndex++ {
-	//		C.PrlResult_GetParamByIndex(hJobResult, nIndex, &hFoundVmInfo)
-	//		// Get the virtual machine name.
-	//		var sName [1024]C.PRL_CHAR
-	//		var nBufSize C.PRL_UINT32 = C.sizeof(sName)
-	//		ret = C.PrlFoundVmInfo_GetName(hFoundVmInfo, sName, &nBufSize)
-	//
-	//		fmt.Printf("VM name: %s\n", C.GoString(sName))
-	//		// Get the name and path of the virtual machine directory.
-	//		var sPath [1024]C.PRL_CHAR
-	//		nBufSize = C.sizeof(sPath)
-	//		ret = C.PrlFoundVmInfo_GetConfigPath(hFoundVmInfo, sPath, &nBufSize)
-	//		fmt.Printf("Path: %s\n\n", C.GoString(sPath))
-	//		C.PrlHandle_Free(hFoundVmInfo)
-	//	}
-	//	C.PrlHandle_Free(hJobResult)
-	//	C.PrlHandle_Free(hStringList)
+	C.PrlResult_GetParamsCount(hJobResult, &nCount)
+	fmt.Printf("Count: %d\n", nCount)
+	for nIndex = 0; nIndex < nCount; nIndex++ {
+		C.PrlResult_GetParamByIndex(hJobResult, nIndex, &hFoundVmInfo)
+		// Get the virtual machine name.
+		//var name = "                                        "
+		//var xxName *C.char = (*C.char)(C.CString(name))
+		//var sName C.PRL_CHAR = (C.char)(C.CString(*xName))
+		//var nBufSize C.PRL_UINT32 = C.sizeof(sName)
+		var name C.PRL_CHAR
+		var nBufSize C.PRL_UINT32 = 0
+		ret = C.PrlFoundVmInfo_GetName(hFoundVmInfo, &name, &nBufSize)
+
+		var gosName string = C.GoStringN((*C.char)(&name), C.int(nBufSize))
+		fmt.Printf("VM %d name: %s\n", nBufSize, gosName)
+		//		// Get the name and path of the virtual machine directory.
+		//		var sPath [1024]C.PRL_CHAR
+		//		nBufSize = C.sizeof(sPath)
+		//		ret = C.PrlFoundVmInfo_GetConfigPath(hFoundVmInfo, sPath, &nBufSize)
+		//		fmt.Printf("Path: %s\n\n", C.GoString(sPath))
+		//		C.PrlHandle_Free(hFoundVmInfo)
+	}
+	C.PrlHandle_Free(hJobResult)
+	//C.PrlHandle_Free(hStringList)
 
 	C.PrlHandle_Free(hJob)
 	C.PrlHandle_Free(hServer)
