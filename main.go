@@ -7,6 +7,8 @@ import "C"
 
 import (
 	"fmt"
+	//"reflect"
+	"unsafe"
 )
 
 func main() {
@@ -121,11 +123,14 @@ func main() {
 		//var xxName *C.char = (*C.char)(C.CString(name))
 		//var sName C.PRL_CHAR = (C.char)(C.CString(*xName))
 		//var nBufSize C.PRL_UINT32 = C.sizeof(sName)
-		var name C.PRL_CHAR
-		var nBufSize C.PRL_UINT32 = 0
-		ret = C.PrlFoundVmInfo_GetName(hFoundVmInfo, &name, &nBufSize)
 
-		var gosName string = C.GoStringN((*C.char)(&name), C.int(nBufSize))
+		var cName = C.CString("                                          ")
+		var name C.PRL_STR = C.PRL_STR(unsafe.Pointer(&cName))
+		var nBufSize C.PRL_UINT32 = 25
+
+		ret = C.PrlFoundVmInfo_GetName(hFoundVmInfo, name, &nBufSize)
+		var gosName string = C.GoStringN(name, C.int(nBufSize))
+		//var gosName string = nameToString(name, nBufSize)
 		fmt.Printf("VM %d name: %s\n", nBufSize, gosName)
 		//		// Get the name and path of the virtual machine directory.
 		//		var sPath [1024]C.PRL_CHAR
@@ -142,3 +147,23 @@ func main() {
 	C.PrlApi_Deinit()
 
 }
+
+/*
+func nameToString(name []C.PRL_CHAR, bufLen C.PRL_UINT32) (result string) {
+
+	for i := 0; i < len(name); i++ {
+		fmt.Printf("%x ", name[i])
+	}
+		var chars string
+		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&chars)))
+		sliceHeader.Len = int(bufLen)
+		sliceHeader.Cap = int(bufLen)
+		sliceHeader.Data = uint32(unsafe.Pointer(&name))
+
+		//var result string
+		for _, value := range name {
+			result += fmt.Sprintf(".%s", value)
+		}
+		return result[1:]
+}
+*/
