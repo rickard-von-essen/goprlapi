@@ -7,7 +7,6 @@ import "C"
 
 import (
 	"fmt"
-	//"reflect"
 	"unsafe"
 )
 
@@ -60,13 +59,7 @@ func main() {
 	}
 	fmt.Printf("login successfully performed\n")
 
-	// Do stuff
-	//var hStringList C.PRL_HANDLE
-	//C.PrlApi_CreateStringsList(&hStringList)
-	//C.PrlStrList_AddItem(hStringList, C.CString("/Users/rickard/go-code/testing/output-parallels-iso/"))
-	//C.PrlStrList_AddItem(hStringList, C.CString("/Users/rickard/Documents/Parallels/Windows 7.pvm/"))
 	// Begin the search operation.
-	//hJob = C.PrlSrv_StartSearchVms(hServer, hStringList)
 	hJob = C.PrlSrv_GetVmList(hServer)
 	// Wait for the job to complete.
 	ret = C.PrlJob_Wait(hJob, 10000)
@@ -119,51 +112,20 @@ func main() {
 	for nIndex = 0; nIndex < nCount; nIndex++ {
 		C.PrlResult_GetParamByIndex(hJobResult, nIndex, &hFoundVmInfo)
 		// Get the virtual machine name.
-		//var name = "                                        "
-		//var xxName *C.char = (*C.char)(C.CString(name))
-		//var sName C.PRL_CHAR = (C.char)(C.CString(*xName))
-		//var nBufSize C.PRL_UINT32 = C.sizeof(sName)
-
-		var cName = C.CString("                                          ")
-		var name C.PRL_STR = C.PRL_STR(unsafe.Pointer(&cName))
-		var nBufSize C.PRL_UINT32 = 25
-
-		ret = C.PrlFoundVmInfo_GetName(hFoundVmInfo, name, &nBufSize)
-		var gosName string = C.GoStringN(name, C.int(nBufSize))
-		//var gosName string = nameToString(name, nBufSize)
-		fmt.Printf("VM %d name: %s\n", nBufSize, gosName)
-		//		// Get the name and path of the virtual machine directory.
-		//		var sPath [1024]C.PRL_CHAR
-		//		nBufSize = C.sizeof(sPath)
-		//		ret = C.PrlFoundVmInfo_GetConfigPath(hFoundVmInfo, sPath, &nBufSize)
-		//		fmt.Printf("Path: %s\n\n", C.GoString(sPath))
-		//		C.PrlHandle_Free(hFoundVmInfo)
+		// PRL_CHAR sName[1024];
+		var sName [1024]C.PRL_CHAR
+		// PRL_UINT32 nBufSize = sizeof(sName);
+		var nBufSize C.PRL_UINT32 = C.PRL_UINT32(unsafe.Sizeof(sName))
+		//var pName *C.PRL_STR = (*C.PRL_STR)(unsafe.Pointer((&sName[0])))
+		ret = C.PrlFoundVmInfo_GetName(hFoundVmInfo, (*C.PRL_CHAR)(unsafe.Pointer(&sName)), &nBufSize)
+		// printf("VM name: %s\n", sName);
+		var gName string = C.GoString((*C.char)(unsafe.Pointer(&sName)))
+		fmt.Printf("VM %d name: \"%s\"\n", nBufSize, gName)
 	}
 	C.PrlHandle_Free(hJobResult)
-	//C.PrlHandle_Free(hStringList)
 
 	C.PrlHandle_Free(hJob)
 	C.PrlHandle_Free(hServer)
 	C.PrlApi_Deinit()
 
 }
-
-/*
-func nameToString(name []C.PRL_CHAR, bufLen C.PRL_UINT32) (result string) {
-
-	for i := 0; i < len(name); i++ {
-		fmt.Printf("%x ", name[i])
-	}
-		var chars string
-		sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&chars)))
-		sliceHeader.Len = int(bufLen)
-		sliceHeader.Cap = int(bufLen)
-		sliceHeader.Data = uint32(unsafe.Pointer(&name))
-
-		//var result string
-		for _, value := range name {
-			result += fmt.Sprintf(".%s", value)
-		}
-		return result[1:]
-}
-*/
