@@ -2,7 +2,6 @@ package main
 
 // #cgo LDFLAGS: -framework ParallelsVirtualizationSDK
 // #include <ParallelsVirtualizationSDK/Parallels.h>
-// #include <stdio.h>
 import "C"
 
 import (
@@ -11,6 +10,12 @@ import (
 )
 
 func main() {
+
+	hServer := LoginLocal()
+	GetVmList(hServer)
+}
+
+func LoginLocal() (hServer C.PRL_HANDLE) {
 
 	err := C.PrlApi_InitEx(C.PARALLELS_API_VER, C.PAM_DESKTOP, C.PRL_UINT32(0), C.PRL_UINT32(0))
 	if err < 0 {
@@ -21,10 +26,8 @@ func main() {
 		fmt.Printf("Success! %s\n", C.GoString(C.prl_result_to_string(err)))
 	}
 
-	// Declare a handle variable.
-	var hServer C.PRL_HANDLE
 	//Call the PrlSrv_Create to obtain the handle.
-	var res = C.PrlSrv_Create(&hServer)
+	res := C.PrlSrv_Create(&hServer)
 	// Examine the function return code.
 	// PRL_FAILED is a macro that evaluates a variable of type PRL_RESULT.
 	// A return value of True indicates success; False indicates failure.
@@ -39,9 +42,9 @@ func main() {
 	var hJob = C.PrlSrv_LoginLocal(hServer, nil, C.PRL_UINT32(0), C.PSL_LOW_SECURITY)
 	// Wait for a maximum of 10 seconds for
 	// asynchronous function PrlSrv_Login to complete.
-	var ret = C.PrlJob_Wait(hJob, 10000)
-	if ret < 0 {
-		fmt.Printf("PrlJob_Wait for PrlSrv_Login returned with error: %s\n", C.GoString(C.prl_result_to_string(ret)))
+	res = C.PrlJob_Wait(hJob, 10000)
+	if res < 0 {
+		fmt.Printf("PrlJob_Wait for PrlSrv_Login returned with error: %s\n", C.GoString(C.prl_result_to_string(res)))
 		C.PrlHandle_Free(hJob)
 		C.PrlHandle_Free(hServer)
 		C.PrlApi_Deinit()
@@ -49,7 +52,7 @@ func main() {
 	}
 	// Analyse the result of the PrlServer_Login call.
 	var nJobResult C.PRL_RESULT
-	ret = C.PrlJob_GetRetCode(hJob, &nJobResult)
+	res = C.PrlJob_GetRetCode(hJob, &nJobResult)
 	if nJobResult < 0 {
 		C.PrlHandle_Free(hJob)
 		C.PrlHandle_Free(hServer)
@@ -57,29 +60,33 @@ func main() {
 		fmt.Printf("Login job returned with error: %s\n", C.GoString(C.prl_result_to_string(nJobResult)))
 		return
 	}
-	fmt.Printf("login successfully performed\n")
 
+	fmt.Printf("login successfully performed\n")
+	return hServer
+}
+
+func GetVmList(hServer C.PRL_HANDLE) {
 	// Begin the search operation.
-	hJob = C.PrlSrv_GetVmList(hServer)
+	var hJob = C.PrlSrv_GetVmList(hServer)
 	// Wait for the job to complete.
-	ret = C.PrlJob_Wait(hJob, 10000)
-	if ret < 0 {
+	res := C.PrlJob_Wait(hJob, 10000)
+	if res < 0 {
 		C.PrlHandle_Free(hJob)
 		C.PrlHandle_Free(hServer)
 		C.PrlApi_Deinit()
-		fmt.Printf("Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(ret)))
+		fmt.Printf("Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(res)))
 		return
 	}
 
 	var nJobReturnCode C.PRL_RESULT
 	var hJobResult C.PRL_HANDLE
 	// Analyze the result of PrlSrv_StartSearchVms.
-	ret = C.PrlJob_GetRetCode(hJob, &nJobReturnCode)
-	if ret < 0 {
+	res = C.PrlJob_GetRetCode(hJob, &nJobReturnCode)
+	if res < 0 {
 		C.PrlHandle_Free(hJob)
 		C.PrlHandle_Free(hServer)
 		C.PrlApi_Deinit()
-		fmt.Printf("GetRetCode: Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(ret)))
+		fmt.Printf("GetRetCode: Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(res)))
 		return
 	}
 	// Check the job return code.
@@ -91,13 +98,13 @@ func main() {
 		return
 	}
 	// Get job result.
-	ret = C.PrlJob_GetResult(hJob, &hJobResult)
+	res = C.PrlJob_GetResult(hJob, &hJobResult)
 	C.PrlHandle_Free(hJob)
-	if ret < 0 {
+	if res < 0 {
 		C.PrlHandle_Free(hJob)
 		C.PrlHandle_Free(hServer)
 		C.PrlApi_Deinit()
-		fmt.Printf("GetResult: Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(ret)))
+		fmt.Printf("GetResult: Search job returned with error: %s\n", C.GoString(C.prl_result_to_string(res)))
 		return
 	}
 
@@ -105,27 +112,34 @@ func main() {
 	// handle of type PHT_FOUND_VM_INFO in each iteration containing
 	// the information about an individual virtual machine.
 	var nIndex, nCount C.PRL_UINT32
-	var hFoundVmInfo C.PRL_HANDLE
 
-	C.PrlResult_GetParamsCount(hJobResult, &nCount)
+	res = C.PrlResult_GetParamsCount(hJobResult, &nCount)
+	if res < 0 {
+		fmt.Printf("PrlResult_GetParamsCount returned: %s\n", C.GoString(C.prl_result_to_string(res)))
+	}
 	fmt.Printf("Count: %d\n", nCount)
 	for nIndex = 0; nIndex < nCount; nIndex++ {
-		C.PrlResult_GetParamByIndex(hJobResult, nIndex, &hFoundVmInfo)
-		// Get the virtual machine name.
-		// PRL_CHAR sName[1024];
-		var sName [1024]C.PRL_CHAR
-		// PRL_UINT32 nBufSize = sizeof(sName);
-		var nBufSize C.PRL_UINT32 = C.PRL_UINT32(unsafe.Sizeof(sName))
-		//var pName *C.PRL_STR = (*C.PRL_STR)(unsafe.Pointer((&sName[0])))
-		ret = C.PrlFoundVmInfo_GetName(hFoundVmInfo, (*C.PRL_CHAR)(unsafe.Pointer(&sName)), &nBufSize)
-		// printf("VM name: %s\n", sName);
-		var gName string = C.GoString((*C.char)(unsafe.Pointer(&sName)))
-		fmt.Printf("VM %d name: \"%s\"\n", nBufSize, gName)
+
+		var hVm *C.PRL_HANDLE = new(C.PRL_HANDLE)
+		res = C.PrlResult_GetParamByIndex(hJobResult, nIndex, hVm)
+		if res < 0 {
+			fmt.Printf("PrlResult_GetParamByIndex returned: %s\n", C.GoString(C.prl_result_to_string(res)))
+		}
+
+		var buf = make([]byte, 1024)
+		var sName C.PRL_STR = (C.PRL_STR)(unsafe.Pointer(&buf))
+		var nBufSize C.PRL_UINT32 = 1024
+		res = C.PrlVmCfg_GetName(*hVm, sName, &nBufSize)
+		fmt.Printf("(%d) ", nIndex)
+		name := C.GoStringN((*_Ctype_char)(unsafe.Pointer(sName)), C.int(nBufSize))
+		fmt.Printf(": \"%s\"\n", name)
+		if res < 0 {
+			fmt.Printf("PrlFoundVmInfo_GetName returned: %s, %d\n", C.GoString(C.prl_result_to_string(res)), nBufSize)
+		}
 	}
 	C.PrlHandle_Free(hJobResult)
 
 	C.PrlHandle_Free(hJob)
 	C.PrlHandle_Free(hServer)
 	C.PrlApi_Deinit()
-
 }
