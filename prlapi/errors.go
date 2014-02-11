@@ -3,10 +3,6 @@ package prlapi
 /*
 #cgo LDFLAGS: -framework ParallelsVirtualizationSDK
 #include <ParallelsVirtualizationSDK/Parallels.h>
-
-extern const char * prl_result_to_string(
-    PRL_RESULT value
-  );
 */
 import "C"
 
