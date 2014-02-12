@@ -44,5 +44,6 @@ func LoginLocal() (server Server, err error) {
 	}
 
 	server.handle = hServer
+
 	return server, nil
 }
