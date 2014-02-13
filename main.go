@@ -25,7 +25,7 @@ func main() {
 		} else {
 			fmt.Printf("Error: %s\n", err)
 		}
-		vm, err := server.GetVm("puppet-management_1392128731")
+		vm, err := server.GetVm("puppet-management_1392305033")
 		if err == nil {
 			fmt.Printf("Vm: %s\n", vm.Name())
 			err = vm.DisplayConnnect()

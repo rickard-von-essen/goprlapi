@@ -64,7 +64,20 @@ func (v *VirtualMachine) SendKeyEvent(key key.Key, event key.KeyEvent) error {
 
 	res := C.PrlDevKeyboard_SendKeyEventEx(v.handle, C.PRL_KEY(key), C.PRL_KEY_EVENT(event))
 	if res < 0 {
-		return from_prl_error("PrlDevKeyboard_SendKeyEvent X key X", res)
+		return from_prl_error("PrlDevKeyboard_SendKeyEvent", res)
+	}
+	return nil
+}
+
+func (v *VirtualMachine) SendKeyPressedAndReleased(key key.Key) error {
+
+	if !v.displayConnected {
+		return fmt.Errorf("Must connect to display before sending keyboard events!")
+	}
+
+	res := C.PrlDevKeyboard_SendKeyPressedAndReleased(v.handle, C.PRL_KEY(key))
+	if res < 0 {
+		return from_prl_error("PrlDevKeyboard_SendKeyPressedAndReleased", res)
 	}
 	return nil
 }
