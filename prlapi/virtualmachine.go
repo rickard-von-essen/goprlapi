@@ -32,8 +32,16 @@ func (v *VirtualMachine) Name() string {
 
 func (v *VirtualMachine) DisplayConnnect() error {
 
-	C.PrlDevDisplay_ConnectToVm(v.handle, C.enum_PDCT_HIGH_QUALITY_WITHOUT_COMPRESSION)
-	//C.PrlDevDisplay_ConnectToVm(v.handle, C.PRL_DISPLAY_CODEC_TYPE(0))
+	// PDCQ_HIGH_QUALITY = 1<<0
+	// PDCC_NO_COMPRESSION = 1<<18
+	// 1 | 1<<18 = 262145 = 0x40001
+	//C.PrlDevDisplay_ConnectToVm(v.handle, C.enum_PDCT_HIGH_QUALITY_WITHOUT_COMPRESSION)
+	hJob := C.PrlDevDisplay_ConnectToVm(v.handle, C.PRL_DISPLAY_CODEC_TYPE(0x40001))
+	defer C.PrlHandle_Free(hJob)
+	res := C.PrlJob_Wait(hJob, 10000)
+	if res < 0 {
+		return from_prl_error("PrlJob_Wait", res)
+	}
 	v.displayConnected = true
 	return nil
 }
@@ -54,7 +62,7 @@ func (v *VirtualMachine) SendKeyEvent(key key.Key, event key.KeyEvent) error {
 		return fmt.Errorf("Must connect to display before sending keyboard events!")
 	}
 
-	res := C.PrlDevKeyboard_SendKeyEvent(v.handle, C.PRL_UINT32(key), C.PRL_KEY_EVENT(event))
+	res := C.PrlDevKeyboard_SendKeyEventEx(v.handle, C.PRL_KEY(key), C.PRL_KEY_EVENT(event))
 	if res < 0 {
 		return from_prl_error("PrlDevKeyboard_SendKeyEvent X key X", res)
 	}

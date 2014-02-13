@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/rickard-von-essen/go-parallels/prlapi"
-	//"github.com/rickard-von-essen/go-parallels/prlapi/key"
+	"github.com/rickard-von-essen/go-parallels/prlapi/key"
 )
 
 func main() {
@@ -28,14 +28,19 @@ func main() {
 		vm, err := server.GetVm("puppet-management_1392128731")
 		if err == nil {
 			fmt.Printf("Vm: %s\n", vm.Name())
-			/*err = vm.SendKeyEvent(key.PRL_KEY_A, key.PKE_PRESS)
+			err = vm.DisplayConnnect()
 			if err != nil {
-				fmt.Printf("error: %s\n", err)
+				fmt.Printf("Error: %s\n", err)
+			} else {
+				err = vm.SendKeyEvent(key.PRL_KEY_A, key.PKE_PRESS)
+				if err != nil {
+					fmt.Printf("error: %s\n", err)
+				}
+				err = vm.SendKeyEvent(key.PRL_KEY_A, key.PKE_RELEASE)
+				if err != nil {
+					fmt.Printf("error: %s\n", err)
+				}
 			}
-			err = vm.SendKeyEvent(key.PRL_KEY_A, key.PKE_RELEASE)
-			if err != nil {
-				fmt.Printf("error: %s\n", err)
-			} */
 		} else {
 			fmt.Printf("Error: %s\n", err)
 		}

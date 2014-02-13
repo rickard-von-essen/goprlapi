@@ -9,6 +9,16 @@ import "C"
 
 type KeyEvent int
 
+func (e KeyEvent) String() string {
+	switch {
+	case e == PKE_PRESS:
+		return "PKE_PRESS"
+	case e == PKE_RELEASE:
+		return "PKE_RELEASE"
+	}
+	return "Unknown PRL_KEY_EVENT"
+}
+
 // C.enum_PRL_KEY_EVENT
 
 const (
