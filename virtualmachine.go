@@ -1,4 +1,4 @@
-package prlapi
+package goprlapi
 
 /*
 #cgo LDFLAGS: -framework ParallelsVirtualizationSDK
@@ -8,7 +8,7 @@ import "C"
 
 import (
 	"fmt"
-	"github.com/rickard-von-essen/go-parallels/prlapi/key"
+	"github.com/rickard-von-essen/goprlapi/key"
 	"unsafe"
 )
 

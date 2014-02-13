@@ -1,4 +1,4 @@
-package prlapi
+package goprlapi
 
 /*
 #cgo LDFLAGS: -framework ParallelsVirtualizationSDK
