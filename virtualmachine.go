@@ -30,7 +30,7 @@ func (v *VirtualMachine) Name() string {
 	return ""
 }
 
-func (v *VirtualMachine) DisplayConnnect() error {
+func (v *VirtualMachine) DisplayConnect() error {
 
 	// PDCQ_HIGH_QUALITY = 1<<0
 	// PDCC_NO_COMPRESSION = 1<<18
@@ -46,7 +46,7 @@ func (v *VirtualMachine) DisplayConnnect() error {
 	return nil
 }
 
-func (v *VirtualMachine) DisplayDisconnnect() error {
+func (v *VirtualMachine) DisplayDisconnect() error {
 
 	v.displayConnected = false
 	res := C.PrlDevDisplay_DisconnectFromVm(v.handle)

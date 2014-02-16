@@ -27,7 +27,7 @@ fmt.Printf("VM name: %s", vm.Name())
 
 ## Copyright
 
-Distributed under the MIT license, see LICENSE.txt.
+Distributed under the MIT license, see _LICENSE_.
  
 © 2014 Rickard von Essen
 
